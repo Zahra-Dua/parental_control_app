@@ -90,7 +90,6 @@ class _ChildScanQRScreenState extends State<ChildScanQRScreen> {
       'manufacturer': androidInfo.manufacturer,
       'osVersion': androidInfo.version.release,
       'sdkInt': androidInfo.version.sdkInt,
-      'pairedAt': FieldValue.serverTimestamp(),
     };
 
     // call usecase to validate and update Firestore

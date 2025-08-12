@@ -104,7 +104,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                     Container(
                       padding: EdgeInsets.all(mq.w(0.03)),
                       color: AppColors.white,
-                                             child: QrImage(
+                                             child: QrImageView(
                          data: _qrPayload ?? '',
                          version: QrVersions.auto,
                          size: mq.w(0.6),

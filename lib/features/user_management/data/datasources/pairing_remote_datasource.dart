@@ -68,6 +68,9 @@ class PairingRemoteDataSourceImpl implements PairingRemoteDataSource {
       throw Exception('Pairing code mismatch');
     }
 
+    final enrichedDeviceInfo = Map<String, dynamic>.from(deviceInfo)
+      ..['pairedAt'] = FieldValue.serverTimestamp();
+
     await firestore
         .collection('parents')
         .doc(parentUid)
@@ -75,7 +78,7 @@ class PairingRemoteDataSourceImpl implements PairingRemoteDataSource {
         .doc(childId)
         .update({
       'paired': true,
-      'pairedDevice': deviceInfo,
+      'pairedDevice': enrichedDeviceInfo,
     });
   }
 
