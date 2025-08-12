@@ -4,9 +4,10 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:parental_control_app/core/constants/app_colors.dart';
 import 'package:parental_control_app/core/utils/media_query_helpers.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parental_control_app/core/di/service_locator.dart';
+import 'package:parental_control_app/features/user_management/domain/usecases/pair_child_device_usecase.dart';
 
 class ChildScanQRScreen extends StatefulWidget {
   const ChildScanQRScreen({Key? key}) : super(key: key);
@@ -67,7 +68,7 @@ class _ChildScanQRScreenState extends State<ChildScanQRScreen> {
     }
   }
 
-  Future<void> _savePairedDeviceToFirestore(
+  Future<void> _pairViaUsecase(
     Map<String, dynamic> payload,
   ) async {
     final parentUid = payload['parentUid'] as String?;
@@ -81,29 +82,6 @@ class _ChildScanQRScreenState extends State<ChildScanQRScreen> {
       return;
     }
 
-    // verify pairing code with parent doc (optional, for extra security)
-    final doc = await FirebaseFirestore.instance
-        .collection('parents')
-        .doc(parentUid)
-        .collection('children')
-        .doc(childId)
-        .get();
-
-    if (!doc.exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pairing failed: child not found')),
-      );
-      return;
-    }
-
-    final serverPairCode = doc.data()?['pairingCode'];
-    if (serverPairCode != pairingCode) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Pairing code mismatch')));
-      return;
-    }
-
     // collect device info
     final deviceInfo = DeviceInfoPlugin();
     final androidInfo = await deviceInfo.androidInfo;
@@ -112,26 +90,24 @@ class _ChildScanQRScreenState extends State<ChildScanQRScreen> {
       'manufacturer': androidInfo.manufacturer,
       'osVersion': androidInfo.version.release,
       'sdkInt': androidInfo.version.sdkInt,
-      'pairedAt': FieldValue.serverTimestamp(),
     };
 
-    // write under parent->children->childId -> pairedDevice
-    await FirebaseFirestore.instance
-        .collection('parents')
-        .doc(parentUid)
-        .collection('children')
-        .doc(childId)
-        .update({'paired': true, 'pairedDevice': deviceMap});
+    // call usecase to validate and update Firestore
+    final usecase = sl<PairChildDeviceUseCase>();
+    await usecase(
+      parentUid: parentUid,
+      childId: childId,
+      pairingCode: pairingCode,
+      deviceInfo: deviceMap,
+    );
 
-    // also create a devices collection mapping on child device for quick lookup
+    // local cache
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('paired_parent', parentUid);
     await prefs.setString('paired_childId', childId);
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Paired successfully')));
-    // navigate to child home
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Paired successfully')));
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const ChildHomeScreen()),
@@ -154,8 +130,8 @@ class _ChildScanQRScreenState extends State<ChildScanQRScreen> {
       await _handlePermissions();
       // 2) ask for Usage Access (open settings)
       await _requestUsageAccessIfNeeded();
-      // 3) save pairing to Firestore
-      await _savePairedDeviceToFirestore(payload);
+      // 3) pair via usecase
+      await _pairViaUsecase(payload);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
