@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:parental_control_app/core/constants/app_colors.dart';
 import 'package:parental_control_app/core/utils/media_query_helpers.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:uuid/uuid.dart';
+import 'package:parental_control_app/core/di/service_locator.dart';
+import 'package:parental_control_app/features/user_management/domain/usecases/create_child_and_qr_usecase.dart';
 
 class AddChildScreen extends StatefulWidget {
   final String parentUid;
@@ -19,57 +18,29 @@ class _AddChildScreenState extends State<AddChildScreen> {
   final _ageC = TextEditingController();
   String? _childId;
   String? _pairingCode;
+  String? _qrPayload;
   bool _showQR = false;
 
   Future<void> _createChildAndGenerateQR() async {
     final name = _nameC.text.trim();
     final age = int.tryParse(_ageC.text.trim()) ?? 0;
     if (name.isEmpty) return;
-    final childId = const Uuid().v4();
-    final pairingCode = _randomCode(8);
-    final data = {
-      'childId': childId,
-      'name': name,
-      'age': age,
-      'gender': 'unknown',
-      'pairingCode': pairingCode,
-      'createdAt': FieldValue.serverTimestamp(),
-      'paired': false,
-    };
 
-    await FirebaseFirestore.instance
-        .collection('parents')
-        .doc(widget.parentUid)
-        .collection('children')
-        .doc(childId)
-        .set(data);
+    final usecase = sl<CreateChildAndQrUseCase>();
+    final res = await usecase(
+      parentUid: widget.parentUid,
+      name: name,
+      age: age,
+    );
 
     setState(() {
-      _childId = childId;
-      _pairingCode = pairingCode;
+      _childId = res.childId;
+      _pairingCode = res.pairingCode;
+      _qrPayload = res.qrPayload;
       _showQR = true;
     });
   }
 
-  String _randomCode(int len) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final rand = DateTime.now().millisecondsSinceEpoch;
-    final buffer = StringBuffer();
-    for (var i = 0; i < len; i++) {
-      buffer.write(chars[(rand + i) % chars.length]);
-    }
-    return buffer.toString();
-  }
-
-  String _qrPayload() {
-    final payload = {
-      'parentUid': widget.parentUid,
-      'childId': _childId,
-      'pairingCode': _pairingCode,
-      'ts': DateTime.now().toIso8601String(),
-    };
-    return jsonEncode(payload);
-  }
 
   @override
   void dispose() {
@@ -133,12 +104,12 @@ class _AddChildScreenState extends State<AddChildScreen> {
                     Container(
                       padding: EdgeInsets.all(mq.w(0.03)),
                       color: AppColors.white,
-                      child: QrImageView(
-                        data: _qrPayload(),
-                        version: QrVersions.auto,
-                        size: mq.w(0.6),
-                        gapless: true,
-                      ),
+                                             child: QrImage(
+                         data: _qrPayload ?? '',
+                         version: QrVersions.auto,
+                         size: mq.w(0.6),
+                         gapless: true,
+                       ),
                     ),
                     SizedBox(height: mq.h(0.02)),
                     Text(
