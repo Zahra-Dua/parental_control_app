@@ -9,7 +9,7 @@ import 'package:parental_control_app/features/user_management/presentation/blocs
 class ResetPasswordScreen extends StatefulWidget {
   // Pass oobCode if the app is opened directly via dynamic link
   final String? oobCode;
-  const ResetPasswordScreen({Key? key, this.oobCode}) : super(key: key);
+  const ResetPasswordScreen({super.key, this.oobCode});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -23,7 +23,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.oobCode != null) _codeC.text = widget.oobCode!;
+    if (widget.oobCode != null) {
+      _codeC.text = widget.oobCode!;
+    }
   }
 
   @override
@@ -42,7 +44,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ).showSnackBar(const SnackBar(content: Text('Enter code')));
       return;
     }
-    context.read<AuthBloc>().add(VerifyResetCodeEvent(code));
+    context.read<AuthBloc>().add(VerifyResetCodeEvent(code: code));
   }
 
   void _confirmReset() {
@@ -62,7 +64,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
     context.read<AuthBloc>().add(
-      ConfirmResetPasswordEvent(code: code, newPassword: newPass),
+      ConfirmResetEvent(code: code, newPassword: newPass),
     );
   }
 
@@ -74,7 +76,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.lightCyan,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.black),
+        iconTheme: const IconThemeData(color: AppColors.black),
       ),
       body: SafeArea(
         child: Padding(
@@ -134,13 +136,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 SizedBox(height: mq.h(0.02)),
                 BlocConsumer<AuthBloc, AuthState>(
                   listener: (context, state) {
-                    if (state is VerifyCodeLoaded) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Code valid for: ${state.email}'),
-                        ),
-                      );
-                    } else if (state is AuthSuccess) {
+                    if (state is AuthSuccess) {
                       ScaffoldMessenger.of(
                         context,
                       ).showSnackBar(SnackBar(content: Text(state.message)));
@@ -152,8 +148,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     }
                   },
                   builder: (context, state) {
-                    if (state is AuthLoading)
+                    if (state is AuthLoading) {
                       return const CircularProgressIndicator();
+                    }
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(

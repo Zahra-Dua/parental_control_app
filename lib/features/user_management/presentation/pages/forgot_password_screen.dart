@@ -25,7 +25,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   void _sendReset() {
-    context.read<AuthBloc>().add(SendResetEmailEvent(_emailC.text.trim()));
+    context.read<AuthBloc>().add(SendResetEmailEvent(email: _emailC.text.trim()));
   }
 
   @override
@@ -36,7 +36,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.lightCyan,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.black),
+        iconTheme: const IconThemeData(color: AppColors.black),
       ),
       body: SafeArea(
         child: Padding(

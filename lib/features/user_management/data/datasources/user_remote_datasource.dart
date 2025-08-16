@@ -7,7 +7,9 @@ abstract class AuthRemoteDataSource {
     required String email,
     required String password,
     required String name,
+    required String userType,
   });
+  Future<User> signInAnonymously();
   Future<void> sendPasswordResetEmail({required String email});
   Future<String> verifyPasswordResetCode({required String code});
   Future<void> confirmPasswordReset({
@@ -36,6 +38,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String email,
     required String password,
     required String name,
+    required String userType,
   }) async {
     final cred = await auth.createUserWithEmailAndPassword(
       email: email,
@@ -46,10 +49,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       'uid': uid,
       'name': name,
       'email': email,
+      'avatarUrl': '',
+      'userType': userType,
+      'childrenIds': userType == 'parent' ? [] : null,
+      'parentId': userType == 'child' ? null : null,
       'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
     // Optionally update displayName
     await cred.user!.updateDisplayName(name);
+    return cred.user!;
+  }
+
+  @override
+  Future<User> signInAnonymously() async {
+    final cred = await auth.signInAnonymously();
     return cred.user!;
   }
 

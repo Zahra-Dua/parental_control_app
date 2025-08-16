@@ -22,6 +22,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           email: event.email,
           password: event.password,
           name: event.name,
+          userType: event.userType,
         );
         emit(AuthSuccess('Account created'));
       } catch (e) {
@@ -52,21 +53,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<VerifyResetCodeEvent>((event, emit) async {
       emit(AuthLoading());
       try {
-        final email = await resetPasswordUseCase.verifyCode(code: event.code);
-        emit(VerifyCodeLoaded(email));
+        await resetPasswordUseCase.verifyResetCode(code: event.code);
+        emit(AuthSuccess('Reset code verified'));
       } catch (e) {
         emit(AuthFailure(e.toString()));
       }
     });
 
-    on<ConfirmResetPasswordEvent>((event, emit) async {
+    on<ConfirmResetEvent>((event, emit) async {
       emit(AuthLoading());
       try {
         await resetPasswordUseCase.confirmReset(
           code: event.code,
           newPassword: event.newPassword,
         );
-        emit(AuthSuccess('Password changed successfully'));
+        emit(AuthSuccess('Password reset successful'));
       } catch (e) {
         emit(AuthFailure(e.toString()));
       }

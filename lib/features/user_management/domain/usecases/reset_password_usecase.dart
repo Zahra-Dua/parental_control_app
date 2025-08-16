@@ -12,6 +12,10 @@ class ResetPasswordUseCase {
     return repository.verifyPasswordResetCode(code: code);
   }
 
+  Future<String> verifyResetCode({required String code}) {
+    return repository.verifyPasswordResetCode(code: code);
+  }
+
   Future<void> confirmReset({
     required String code,
     required String newPassword,

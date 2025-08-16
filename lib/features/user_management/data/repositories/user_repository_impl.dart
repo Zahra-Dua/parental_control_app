@@ -11,13 +11,19 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     required String name,
+    required String userType,
   }) {
-    return remote.signUp(email: email, password: password, name: name);
+    return remote.signUp(email: email, password: password, name: name, userType: userType);
   }
 
   @override
   Future<User> signIn({required String email, required String password}) {
     return remote.signIn(email: email, password: password);
+  }
+
+  @override
+  Future<User> signInAnonymously() {
+    return remote.signInAnonymously();
   }
 
   @override

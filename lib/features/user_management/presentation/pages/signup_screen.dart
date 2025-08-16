@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parental_control_app/core/constants/app_colors.dart';
 import 'package:parental_control_app/core/utils/media_query_helpers.dart';
 import 'package:parental_control_app/features/user_management/presentation/blocs/auth_bloc/auth_bloc.dart';
@@ -20,6 +21,20 @@ class _SignupScreenState extends State<SignupScreen> {
   final _pass = TextEditingController();
   final _confirm = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  String? _userType;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserType();
+  }
+
+  Future<void> _loadUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userType = prefs.getString('user_type');
+    });
+  }
 
   @override
   void dispose() {
@@ -32,11 +47,19 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _signup() {
     if (_formKey.currentState?.validate() ?? false) {
+      if (_userType == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User type not found. Please select again.')),
+        );
+        return;
+      }
+      
       context.read<AuthBloc>().add(
         SignUpEvent(
           name: _name.text.trim(),
           email: _email.text.trim(),
           password: _pass.text,
+          userType: _userType!,
         ),
       );
     }
@@ -61,7 +84,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ResponsiveLogo(sizeFactor: 0.16),
               SizedBox(height: mq.h(0.02)),
               Text(
-                'Signup',
+                'Signup as ${_userType?.toUpperCase() ?? "USER"}',
                 style: TextStyle(
                   fontSize: mq.sp(0.07),
                   fontWeight: FontWeight.bold,

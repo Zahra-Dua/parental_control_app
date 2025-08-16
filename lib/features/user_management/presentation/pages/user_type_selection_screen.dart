@@ -4,8 +4,8 @@ import 'package:parental_control_app/core/utils/media_query_helpers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/user_type_card.dart';
 import '../widgets/responsive_logo.dart';
-import 'dummy_child_screen.dart';
-import 'login_screen.dart'; // We'll create a placeholder login screen (simple) below.
+import 'child_scan_qr_screen.dart';
+import 'login_screen.dart';
 
 class UserTypeSelectionScreen extends StatelessWidget {
   const UserTypeSelectionScreen({super.key});
@@ -26,33 +26,22 @@ class UserTypeSelectionScreen extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: mq.w(0.06)),
           child: Column(
             children: [
-              SizedBox(height: mq.h(0.04)),
-              ResponsiveLogo(sizeFactor: 0.20),
+              SizedBox(height: mq.h(0.08)),
+              ResponsiveLogo(sizeFactor: 0.2),
               SizedBox(height: mq.h(0.02)),
               Text(
-                'SafeNest',
+                'Choose Your Role',
                 style: TextStyle(
-                  fontSize: mq.sp(0.09),
+                  fontSize: mq.sp(0.06),
                   fontWeight: FontWeight.bold,
-                  color: AppColors.black,
                 ),
               ),
               SizedBox(height: mq.h(0.01)),
               Text(
-                'Choose Your Account Type',
+                'Select how you want to use SafeNest',
                 style: TextStyle(
-                  fontSize: mq.sp(0.043),
-                  color: AppColors.darkCyan,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: mq.h(0.01)),
-              Text(
-                "Select whether you're a parent managing family safety or a child joining your family's SafeNest.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: mq.sp(0.034),
-                  color: AppColors.black.withOpacity(0.7),
+                  fontSize: mq.sp(0.035),
+                  color: Colors.grey[600],
                 ),
               ),
               SizedBox(height: mq.h(0.04)),
@@ -100,19 +89,11 @@ class UserTypeSelectionScreen extends StatelessWidget {
                   await _saveUserType('child');
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const DummyChildScreen()),
+                    MaterialPageRoute(builder: (_) => const ChildScanQRScreen()),
                   );
                 },
               ),
               SizedBox(height: mq.h(0.03)),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'Need help? Contact support',
-                  style: TextStyle(decoration: TextDecoration.underline),
-                ),
-              ),
-              SizedBox(height: mq.h(0.02)),
             ],
           ),
         ),
