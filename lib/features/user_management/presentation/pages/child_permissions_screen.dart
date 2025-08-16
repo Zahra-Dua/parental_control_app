@@ -12,15 +12,32 @@ class ChildPermissionsScreen extends StatefulWidget {
 }
 
 class _ChildPermissionsScreenState extends State<ChildPermissionsScreen> {
-  final Map<Permission, bool> _permissions = {
-    Permission.contacts: false,
+  final Map<Permission, bool> _permissionsStatus = {
     Permission.phone: false,
     Permission.sms: false,
     Permission.location: false,
+    Permission.notification: false,
   };
 
-  // For app usage, we'll use a custom permission since it's not directly available
-  bool _appUsagePermission = false;
+  @override
+  void initState() {
+    super.initState();
+    _checkPermissions();
+  }
+
+  Future<void> _checkPermissions() async {
+    for (final permission in _permissionsStatus.keys) {
+      final status = await permission.status;
+      _permissionsStatus[permission] = status.isGranted;
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _requestPermission(Permission permission) async {
+    final status = await permission.request();
+    _permissionsStatus[permission] = status.isGranted;
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,39 +110,17 @@ class _ChildPermissionsScreenState extends State<ChildPermissionsScreen> {
                   child: Column(
                     children: [
                       _buildPermissionItem(
-                        'Contacts',
-                        'Access to contact list for emergency calls',
-                        Icons.contacts,
-                        Permission.contacts,
-                      ),
-                      const Divider(),
-                      _buildPermissionItem(
-                        'Phone Calls',
-                        'Monitor incoming and outgoing calls',
-                        Icons.phone,
-                        Permission.phone,
-                      ),
-                      const Divider(),
-                      _buildPermissionItem(
-                        'Messages',
-                        'Monitor SMS and messaging apps',
-                        Icons.message,
-                        Permission.sms,
-                      ),
-                      const Divider(),
-                      _buildPermissionItem(
-                        'App Usage',
-                        'Track which apps are being used',
-                        Icons.apps,
-                        null, // Custom permission
-                        isCustom: true,
-                      ),
-                      const Divider(),
-                      _buildPermissionItem(
                         'Location',
-                        'Track device location for safety',
+                        'Track device location for safety (enable background for geofencing)',
                         Icons.location_on,
                         Permission.location,
+                      ),
+                      const Divider(),
+                      _buildPermissionItem(
+                        'Notifications',
+                        'Used to alert on geofence entry/exit',
+                        Icons.notifications,
+                        Permission.notification,
                       ),
                     ],
                   ),
@@ -163,64 +158,24 @@ class _ChildPermissionsScreenState extends State<ChildPermissionsScreen> {
     );
   }
 
-  Widget _buildPermissionItem(
-    String title,
-    String description,
-    IconData icon,
-    Permission? permission, {
-    bool isCustom = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.darkCyan, size: 24),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: isCustom 
-                ? _appUsagePermission 
-                : _permissions[permission!] ?? false,
-            onChanged: (value) {
-              setState(() {
-                if (isCustom) {
-                  _appUsagePermission = value;
-                } else {
-                  _permissions[permission!] = value;
-                }
-              });
-            },
-            activeColor: AppColors.darkCyan,
-          ),
-        ],
+  Widget _buildPermissionItem(String title, String subtitle, IconData icon, Permission permission) {
+    final granted = _permissionsStatus[permission] ?? false;
+    return Card(
+      child: ListTile(
+        leading: Icon(icon, color: AppColors.darkCyan),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: Switch(
+          value: granted,
+          onChanged: (_) => _requestPermission(permission),
+        ),
       ),
     );
   }
 
   Future<void> _handleContinue() async {
     // Request permissions that are enabled
-    for (final entry in _permissions.entries) {
+    for (final entry in _permissionsStatus.entries) {
       if (entry.value) {
         await entry.key.request();
       }
