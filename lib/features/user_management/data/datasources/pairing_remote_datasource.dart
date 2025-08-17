@@ -33,36 +33,47 @@ class PairingRemoteDataSourceImpl implements PairingRemoteDataSource {
     return parentUid;
   }
 
-  @override
-  Future<void> linkChildToParent({
-    required String parentUid,
-    required String childName,
-    required int age,
-    required String gender,
-    required List<String> hobbies,
-  }) async {
-    final userCredential = await auth.signInAnonymously();
-    final childUid = userCredential.user!.uid;
+     @override
+   Future<void> linkChildToParent({
+     required String parentUid,
+     required String childName,
+     required int age,
+     required String gender,
+     required List<String> hobbies,
+   }) async {
+     final userCredential = await auth.signInAnonymously();
+     final childUid = userCredential.user!.uid;
 
-    await firestore.collection('users').doc(childUid).set({
-      'uid': childUid,
-      'name': childName,
-      'email': '',
-      'avatarUrl': '',
-      'userType': 'child',
-      'parentId': parentUid,
-      'age': age,
-      'gender': gender,
-      'hobbies': hobbies,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+     await firestore.collection('users').doc(childUid).set({
+       'uid': childUid,
+       'name': childName,
+       'email': '',
+       'avatarUrl': '',
+       'userType': 'child',
+       'parentId': parentUid,
+       'age': age,
+       'gender': gender,
+       'hobbies': hobbies,
+       'createdAt': FieldValue.serverTimestamp(),
+       'updatedAt': FieldValue.serverTimestamp(),
+     });
 
-    await firestore.collection('users').doc(parentUid).update({
-      'childrenIds': FieldValue.arrayUnion([childUid]),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  }
+     await firestore.collection('users').doc(parentUid).update({
+       'childrenIds': FieldValue.arrayUnion([childUid]),
+       'updatedAt': FieldValue.serverTimestamp(),
+     });
+
+     // Mirror a child profile doc under parent's subtree for per-child data like locations/geofences
+     await firestore.collection('users').doc(parentUid)
+       .collection('children').doc(childUid).set({
+         'uid': childUid,
+         'name': childName,
+         'age': age,
+         'gender': gender,
+         'avatarUrl': '',
+         'createdAt': FieldValue.serverTimestamp(),
+       }, SetOptions(merge: true));
+   }
 
   @override
   Future<bool> isChildAlreadyLinked({required String childUid}) async {
@@ -87,20 +98,9 @@ class PairingRemoteDataSourceImpl implements PairingRemoteDataSource {
 
   @override
   Future<List<Map<String, dynamic>>> getParentChildren({required String parentUid}) async {
-    final parentDoc = await firestore.collection('users').doc(parentUid).get();
-    if (!parentDoc.exists) return [];
-    
-    final childrenIds = List<String>.from(parentDoc.data()?['childrenIds'] ?? []);
-    if (childrenIds.isEmpty) return [];
-    
-    final childrenData = <Map<String, dynamic>>[];
-    for (final childId in childrenIds) {
-      final childDoc = await firestore.collection('users').doc(childId).get();
-      if (childDoc.exists) {
-        childrenData.add(childDoc.data()!);
-      }
-    }
-    
-    return childrenData;
+    final childrenSnap = await firestore.collection('users').doc(parentUid)
+        .collection('children').get();
+    if (childrenSnap.docs.isEmpty) return [];
+    return childrenSnap.docs.map((d) => d.data()).toList();
   }
 }

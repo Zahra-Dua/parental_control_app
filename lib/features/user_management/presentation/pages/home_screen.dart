@@ -5,6 +5,7 @@ import 'package:parental_control_app/core/constants/app_colors.dart';
 import 'package:parental_control_app/core/utils/media_query_helpers.dart';
 import 'package:parental_control_app/core/di/service_locator.dart';
 import 'package:parental_control_app/features/user_management/domain/usecases/get_parent_children_usecase.dart';
+import 'package:parental_control_app/features/location_tracking/presentation/pages/map_screen.dart';
 
 class ParentHomeScreen extends StatefulWidget {
   const ParentHomeScreen({Key? key}) : super(key: key);
@@ -16,6 +17,7 @@ class ParentHomeScreen extends StatefulWidget {
 class _ParentHomeScreenState extends State<ParentHomeScreen> {
   List<Map<String, dynamic>> _children = [];
   bool _isLoading = true;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -41,6 +43,23 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading children: $e')),
       );
+    }
+  }
+
+  void _onNavTap(int index) {
+    setState(() => _selectedIndex = index);
+    if (index == 1) {
+      if (_children.isNotEmpty) {
+        final first = _children.first;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MapScreen(childId: first['uid'] ?? first['id'] ?? '', childName: first['name'] ?? 'Child'),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No child linked')));
+      }
     }
   }
 
@@ -427,41 +446,54 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.map, size: 48, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text(
-                              'Map View',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
-                              ),
+                    GestureDetector(
+                      onTap: () {
+                        if (_children.isNotEmpty) {
+                          final first = _children.first;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MapScreen(childId: first['uid'] ?? first['id'] ?? '', childName: first['name'] ?? 'Child'),
                             ),
-                            Text(
-                              'Location tracking will be implemented',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
+                          );
+                        }
+                      },
+                      child: Container(
+                        height: 200,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
                           ],
+                        ),
+                        child: const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.map, size: 48, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text(
+                                'Map View',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Text(
+                                'Location tracking will be implemented',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -509,6 +541,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
+        currentIndex: _selectedIndex,
+        onTap: _onNavTap,
         selectedItemColor: AppColors.darkCyan,
         unselectedItemColor: Colors.grey,
         items: const [

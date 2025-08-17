@@ -425,7 +425,12 @@ class ChildHomeScreen extends StatelessWidget {
                   title: const Text('Location'),
                   subtitle: const Text('Share location with parent'),
                   onTap: () {
-                    // TODO: Implement location feature
+                    // Navigate to permissions to enable background location first
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ChildPermissionsScreen(),
+                      ),
+                    );
                   },
                 ),
               ),
