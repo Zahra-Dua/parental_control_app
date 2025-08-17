@@ -37,8 +37,8 @@ Future<void> initServiceLocator() async {
   sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
 
   // Data source
-  sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(auth: sl(), firestore: sl()),
+  sl.registerLazySingleton<UserRemoteDataSource>(
+    () => UserRemoteDataSourceImpl(auth: sl(), firestore: sl()),
   );
   sl.registerLazySingleton<PairingRemoteDataSource>(
     () => PairingRemoteDataSourceImpl(firestore: sl(), auth: sl()),
@@ -53,8 +53,8 @@ Future<void> initServiceLocator() async {
   );
 
   // Repository
-  sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(remote: sl()),
+  sl.registerLazySingleton<UserRepository>(
+    () => UserRepositoryImpl(remote: sl()),
   );
   sl.registerLazySingleton<PairingRepository>(
     () => PairingRepositoryImpl(remote: sl()),
@@ -67,8 +67,8 @@ Future<void> initServiceLocator() async {
   );
 
   // Use cases
-  sl.registerLazySingleton(() => SignUpUseCase(sl()));
-  sl.registerLazySingleton(() => SignInUseCase(sl()));
+  sl.registerLazySingleton(() => SignupUseCase(sl()));
+  sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => ResetPasswordUseCase(sl()));
   sl.registerLazySingleton(() => GenerateParentQRUseCase(sl()));
   sl.registerLazySingleton(() => LinkChildToParentUseCase(sl()));
@@ -85,8 +85,8 @@ Future<void> initServiceLocator() async {
   // Bloc (factory so new instance per screen if needed)
   sl.registerFactory(
     () => AuthBloc(
-      signUpUseCase: sl(),
-      signInUseCase: sl(),
+      signUpUseCase: sl<SignupUseCase>(),
+      signInUseCase: sl<LoginUseCase>(),
       resetPasswordUseCase: sl(),
     ),
   );
