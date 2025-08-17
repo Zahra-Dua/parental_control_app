@@ -1,11 +1,16 @@
-import '../entities/child_location.dart';
-import '../repositories/location_repository.dart';
+import 'package:dartz/dartz.dart';
+import 'package:parental_control_app/core/errors/failures.dart';
+import 'package:parental_control_app/core/usecase/usecase.dart';
+import 'package:parental_control_app/features/location_tracking/domain/entities/child_location_entity.dart';
+import 'package:parental_control_app/features/location_tracking/domain/repositories/location_repository.dart';
 
-class StreamChildLocationUseCase {
+class StreamChildLocationUseCase implements StreamUseCase<ChildLocationEntity, String> {
   final LocationRepository repository;
+
   StreamChildLocationUseCase(this.repository);
 
-  Stream<ChildLocation?> call({required String parentId, required String childId}) {
-    return repository.streamLastLocation(parentId: parentId, childId: childId);
+  @override
+  Stream<Either<Failure, ChildLocationEntity>> call(String childId) {
+    return repository.streamChildLocation(childId);
   }
 }

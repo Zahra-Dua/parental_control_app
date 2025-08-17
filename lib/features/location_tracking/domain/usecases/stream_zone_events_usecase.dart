@@ -1,11 +1,16 @@
-import '../entities/zone_event.dart';
-import '../repositories/geofence_repository.dart';
+import 'package:dartz/dartz.dart';
+import 'package:parental_control_app/core/errors/failures.dart';
+import 'package:parental_control_app/core/usecase/usecase.dart';
+import 'package:parental_control_app/features/location_tracking/domain/entities/zone_event_entity.dart';
+import 'package:parental_control_app/features/location_tracking/domain/repositories/geofence_repository.dart';
 
-class StreamZoneEventsUseCase {
+class StreamZoneEventsUseCase implements StreamUseCase<List<ZoneEventEntity>, String> {
   final GeofenceRepository repository;
+
   StreamZoneEventsUseCase(this.repository);
 
-  Stream<List<ZoneEvent>> call({required String parentId, required String childId}) {
-    return repository.streamZoneEvents(parentId: parentId, childId: childId);
+  @override
+  Stream<Either<Failure, List<ZoneEventEntity>>> call(String childId) {
+    return repository.streamZoneEvents(childId);
   }
 }

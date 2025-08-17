@@ -52,17 +52,20 @@ dependencies:
   uuid: ^4.5.1
   
   # Location & Maps
-  geolocator: ^13.0.1
+  geolocator: ^14.0.2
   google_maps_flutter: ^2.9.0
   google_maps_flutter_platform_interface: ^2.8.0
   geofence_service: ^6.0.0
 
   # Notifications & messaging
-  flutter_local_notifications: ^17.2.3
-  firebase_messaging: ^15.0.4
+  flutter_local_notifications: ^19.4.0
+  firebase_messaging: ^16.0.0
   
   # Cloud Functions (for privileged writes/validations)
-  cloud_functions: ^5.0.4
+  cloud_functions: ^6.0.0
+
+  # JSON serialization
+  json_annotation: ^4.9.0
 
 
 dev_dependencies:
@@ -75,6 +78,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  
+  # JSON serialization code generation
+  json_serializable: ^6.8.0
+  build_runner: ^2.4.10
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

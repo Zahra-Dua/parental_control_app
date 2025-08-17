@@ -1,14 +1,15 @@
-import '../repositories/geofence_repository.dart';
+import 'package:dartz/dartz.dart';
+import 'package:parental_control_app/core/errors/failures.dart';
+import 'package:parental_control_app/core/usecase/usecase.dart';
+import 'package:parental_control_app/features/location_tracking/domain/repositories/geofence_repository.dart';
 
-class DeleteGeofenceUseCase {
+class DeleteGeofenceUseCase implements UseCase<void, String> {
   final GeofenceRepository repository;
+
   DeleteGeofenceUseCase(this.repository);
 
-  Future<void> call({
-    required String parentId,
-    required String childId,
-    required String zoneId,
-  }) {
-    return repository.deleteGeofence(parentId: parentId, childId: childId, zoneId: zoneId);
+  @override
+  Future<Either<Failure, void>> call(String zoneId) {
+    return repository.deleteGeofenceZone(zoneId);
   }
 }

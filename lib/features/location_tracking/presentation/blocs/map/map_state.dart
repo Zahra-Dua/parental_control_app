@@ -1,19 +1,47 @@
-import 'package:parental_control_app/features/location_tracking/domain/entities/child_location.dart';
-import 'package:parental_control_app/features/location_tracking/domain/entities/geofence_zone.dart';
+part of 'map_bloc.dart';
 
-abstract class MapState {}
+class MapState extends Equatable {
+  final bool isTracking;
+  final String? currentChildId;
+  final ChildLocationEntity? currentLocation;
+  final List<GeofenceZoneEntity> geofences;
+  final DateTime? lastUpdated;
+  final String? error;
 
-class MapInitial extends MapState {}
+  const MapState({
+    this.isTracking = false,
+    this.currentChildId,
+    this.currentLocation,
+    this.geofences = const [],
+    this.lastUpdated,
+    this.error,
+  });
 
-class MapLoading extends MapState {}
+  MapState copyWith({
+    bool? isTracking,
+    String? currentChildId,
+    ChildLocationEntity? currentLocation,
+    List<GeofenceZoneEntity>? geofences,
+    DateTime? lastUpdated,
+    String? error,
+  }) {
+    return MapState(
+      isTracking: isTracking ?? this.isTracking,
+      currentChildId: currentChildId ?? this.currentChildId,
+      currentLocation: currentLocation ?? this.currentLocation,
+      geofences: geofences ?? this.geofences,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      error: error,
+    );
+  }
 
-class MapLoaded extends MapState {
-  final ChildLocation? lastLocation;
-  final List<GeofenceZone> geofences;
-  MapLoaded({required this.lastLocation, required this.geofences});
-}
-
-class MapError extends MapState {
-  final String message;
-  MapError(this.message);
+  @override
+  List<Object?> get props => [
+        isTracking,
+        currentChildId,
+        currentLocation,
+        geofences,
+        lastUpdated,
+        error,
+      ];
 }
