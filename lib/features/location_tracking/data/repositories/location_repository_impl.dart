@@ -1,18 +1,126 @@
-import '../../domain/entities/child_location.dart';
-import '../../domain/repositories/location_repository.dart';
-import '../datasources/location_remote_datasource.dart';
+import 'package:dartz/dartz.dart';
+import 'package:parental_control_app/core/errors/failures.dart';
+import 'package:parental_control_app/core/errors/exceptions.dart';
+import 'package:parental_control_app/features/location_tracking/domain/entities/child_location_entity.dart';
+import 'package:parental_control_app/features/location_tracking/domain/repositories/location_repository.dart';
+import 'package:parental_control_app/features/location_tracking/data/datasources/location_remote_datasource.dart';
+import 'package:parental_control_app/features/location_tracking/data/models/child_location_model.dart';
 
 class LocationRepositoryImpl implements LocationRepository {
   final LocationRemoteDataSource remote;
+
   LocationRepositoryImpl({required this.remote});
 
   @override
-  Future<ChildLocation?> getLastLocation({required String parentId, required String childId}) {
-    return remote.getLastLocation(parentId: parentId, childId: childId);
+  Stream<Either<Failure, ChildLocationEntity>> streamChildLocation(String childId) {
+    return remote.streamChildLocation(childId).map(
+      (location) => Right(location.toEntity()),
+    ).handleError((error) {
+      return Left(_mapExceptionToFailure(error));
+    });
   }
 
   @override
-  Stream<ChildLocation?> streamLastLocation({required String parentId, required String childId}) {
-    return remote.streamLastLocation(parentId: parentId, childId: childId);
+  Future<Either<Failure, ChildLocationEntity?>> getLastKnownLocation(String childId) async {
+    try {
+      final location = await remote.getLastKnownLocation(childId);
+      return Right(location?.toEntity());
+    } on AppException catch (e) {
+      return Left(_mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error occurred: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateChildLocation(ChildLocationEntity location) async {
+    try {
+      final locationModel = ChildLocationModel.fromEntity(location);
+      await remote.updateChildLocation(locationModel);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(_mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to update location: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> checkLocationServicesStatus(String childId) async {
+    try {
+      // Get the last known location to check if location services are working
+      final location = await remote.getLastKnownLocation(childId);
+      
+      if (location == null) {
+        return const Right(false);
+      }
+      
+      // Check if the location is recent (within last 15 minutes)
+      final now = DateTime.now();
+      final locationAge = now.difference(location.timestamp);
+      
+      if (locationAge.inMinutes > 15) {
+        return const Right(false); // Location services might be disabled
+      }
+      
+      return Right(location.isActive);
+    } on AppException catch (e) {
+      return Left(_mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to check location services: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<ChildLocationEntity>>> getLocationHistory({
+    required String childId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      final locations = await remote.getLocationHistory(
+        childId: childId,
+        startDate: startDate,
+        endDate: endDate,
+      );
+      
+      final entities = locations.map((location) => location.toEntity()).toList();
+      return Right(entities);
+    } on AppException catch (e) {
+      return Left(_mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to get location history: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> stopLocationTracking(String childId) async {
+    try {
+      await remote.stopLocationTracking(childId);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(_mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to stop location tracking: ${e.toString()}'));
+    }
+  }
+
+  /// Maps exceptions to appropriate failure types
+  Failure _mapExceptionToFailure(Exception exception) {
+    if (exception is ServerException) {
+      return ServerFailure(exception.message);
+    } else if (exception is NetworkException) {
+      return NetworkFailure(exception.message);
+    } else if (exception is CacheException) {
+      return CacheFailure(exception.message);
+    } else if (exception is LocationException) {
+      return LocationServiceDisabledFailure();
+    } else if (exception is AuthenticationException) {
+      return AuthenticationFailure(exception.message);
+    } else if (exception is AuthorizationException) {
+      return AuthorizationFailure(exception.message);
+    }
+    
+    return ServerFailure('An unexpected error occurred');
   }
 }

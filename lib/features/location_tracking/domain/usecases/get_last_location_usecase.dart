@@ -1,11 +1,16 @@
-import '../entities/child_location.dart';
-import '../repositories/location_repository.dart';
+import 'package:dartz/dartz.dart';
+import 'package:parental_control_app/core/errors/failures.dart';
+import 'package:parental_control_app/core/usecase/usecase.dart';
+import 'package:parental_control_app/features/location_tracking/domain/entities/child_location_entity.dart';
+import 'package:parental_control_app/features/location_tracking/domain/repositories/location_repository.dart';
 
-class GetLastLocationUseCase {
+class GetLastLocationUseCase implements UseCase<ChildLocationEntity?, String> {
   final LocationRepository repository;
+
   GetLastLocationUseCase(this.repository);
 
-  Future<ChildLocation?> call({required String parentId, required String childId}) {
-    return repository.getLastLocation(parentId: parentId, childId: childId);
+  @override
+  Future<Either<Failure, ChildLocationEntity?>> call(String childId) {
+    return repository.getLastKnownLocation(childId);
   }
 }
